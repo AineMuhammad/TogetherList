@@ -21,15 +21,18 @@ export function NavLinks() {
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
+            aria-label={label}
+            title={label}
             className={cn(
-              "flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors",
+              "flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-colors lg:px-3.5",
               active
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             <Icon className="size-4" />
-            {label}
+            {/* Icon-only on medium screens to keep the top bar uncrowded. */}
+            <span className="hidden lg:inline">{label}</span>
           </Link>
         );
       })}
