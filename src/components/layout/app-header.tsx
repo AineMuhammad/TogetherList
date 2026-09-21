@@ -1,45 +1,29 @@
-import Link from "next/link";
-import { signOutAction } from "@/app/actions/auth";
-import { Button } from "@/components/ui/button";
 import { HouseholdSwitcher } from "@/components/household/household-switcher";
+import { Logo } from "./logo";
+import { MobileNav, NavLinks } from "./nav-links";
+import { UserMenu } from "./user-menu";
 
 type Props = {
   userName: string;
+  userEmail: string | null;
   households: { id: string; name: string }[];
   activeId: string | null;
 };
 
-export function AppHeader({ userName, households, activeId }: Props) {
+export function AppHeader({ userName, userEmail, households, activeId }: Props) {
   return (
-    <header className="bg-background/95 sticky top-0 z-10 border-b backdrop-blur">
-      <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-        <Link href="/" className="font-semibold tracking-tight">
-          TogetherList
-        </Link>
-        {activeId && (
-          <nav className="text-muted-foreground flex items-center gap-3 text-sm">
-            <Link href="/" className="hover:text-foreground">
-              Grocery
-            </Link>
-            <Link href="/settings" className="hover:text-foreground">
-              Settings
-            </Link>
-          </nav>
-        )}
-        <div className="ml-auto flex items-center gap-2">
-          <HouseholdSwitcher households={households} activeId={activeId} />
-          <form action={signOutAction}>
-            <Button
-              type="submit"
-              variant="ghost"
-              size="sm"
-              title={`Signed in as ${userName}`}
-            >
-              Sign out
-            </Button>
-          </form>
+    <>
+      <header className="bg-background/80 sticky top-0 z-30 border-b backdrop-blur-lg">
+        <div className="mx-auto flex h-16 w-full max-w-5xl items-center gap-3 px-4 sm:gap-6">
+          <Logo className="shrink-0 [&>span:last-child]:hidden sm:[&>span:last-child]:inline" />
+          {activeId && <NavLinks />}
+          <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
+            <HouseholdSwitcher households={households} activeId={activeId} />
+            <UserMenu name={userName} email={userEmail} />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+      {activeId && <MobileNav />}
+    </>
   );
 }

@@ -1,6 +1,8 @@
+import { Home, KeyRound } from "lucide-react";
 import { requireUser } from "@/lib/household";
 import { createHousehold, joinHousehold } from "@/app/actions/household";
 import { ActionForm } from "@/components/household/action-form";
+import { PageHeader } from "@/components/layout/page-header";
 import {
   Card,
   CardContent,
@@ -11,24 +13,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+export const metadata = { title: "Set up your household" };
+
+function IconBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="bg-accent text-accent-foreground mb-3 flex size-11 items-center justify-center rounded-xl">
+      {children}
+    </span>
+  );
+}
+
 export default async function OnboardingPage() {
   await requireUser();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Set up your household</h1>
-        <p className="text-muted-foreground">
-          Start a new household, or join one with a code from someone you live with.
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        title="Set up your household"
+        description="Start a new household, or join one with a code from someone you live with."
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Create a household</CardTitle>
+            <IconBadge>
+              <Home className="size-5" />
+            </IconBadge>
+            <CardTitle className="text-lg">Create a household</CardTitle>
             <CardDescription>
-              You&apos;ll get a code to share with others.
+              You&apos;ll get a code to share with the others.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -49,8 +62,13 @@ export default async function OnboardingPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Join a household</CardTitle>
-            <CardDescription>Enter the 6-character join code.</CardDescription>
+            <IconBadge>
+              <KeyRound className="size-5" />
+            </IconBadge>
+            <CardTitle className="text-lg">Join a household</CardTitle>
+            <CardDescription>
+              Enter the 6-character join code you were given.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ActionForm action={joinHousehold} submitLabel="Join household">
@@ -64,7 +82,7 @@ export default async function OnboardingPage() {
                   maxLength={6}
                   autoCapitalize="characters"
                   autoComplete="off"
-                  className="font-mono tracking-widest uppercase"
+                  className="font-mono text-lg tracking-[0.3em] uppercase"
                 />
               </div>
             </ActionForm>

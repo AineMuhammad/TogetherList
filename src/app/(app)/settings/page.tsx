@@ -1,6 +1,9 @@
 import { db } from "@/lib/db";
 import { requireActiveMembership } from "@/lib/household";
 import { leaveHousehold, removeMember, renameHousehold } from "@/app/actions/household";
+import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ActionForm } from "@/components/household/action-form";
 import { ConfirmButton } from "@/components/household/confirm-button";
 import { CopyButton } from "@/components/household/copy-button";
@@ -27,8 +30,11 @@ export default async function SettingsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Household settings</h1>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader
+        title="Household settings"
+        description={`Manage ${household.name} and who is in it.`}
+      />
 
       <Card>
         <CardHeader>
@@ -93,25 +99,34 @@ export default async function SettingsPage() {
           <ul className="divide-y">
             {members.map((m) => (
               <li key={m.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">
+                <Avatar size="lg">
+                  <AvatarFallback className="bg-secondary text-sm font-bold">
+                    {(m.user.name ?? m.user.email ?? "?").slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">
                     {m.user.name ?? m.user.email}
                     {m.userId === user.id && (
                       <span className="text-muted-foreground"> (you)</span>
                     )}
                   </p>
                   <p className="text-muted-foreground truncate text-sm">
-                    {m.role === "OWNER" ? "Owner" : "Member"}
-                    {m.user.name && m.user.email ? ` · ${m.user.email}` : ""}
+                    {m.user.name && m.user.email ? m.user.email : "\u00a0"}
                   </p>
                 </div>
-                {isOwner && m.userId !== user.id && (
-                  <ConfirmButton
-                    action={removeMember.bind(null, household.id, m.userId)}
-                    label="Remove"
-                    confirmText={`Remove ${m.user.name ?? m.user.email} from ${household.name}?`}
-                  />
-                )}
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge variant={m.role === "OWNER" ? "default" : "secondary"}>
+                    {m.role === "OWNER" ? "Owner" : "Member"}
+                  </Badge>
+                  {isOwner && m.userId !== user.id && (
+                    <ConfirmButton
+                      action={removeMember.bind(null, household.id, m.userId)}
+                      label="Remove"
+                      confirmText={`Remove ${m.user.name ?? m.user.email} from ${household.name}?`}
+                    />
+                  )}
+                </div>
               </li>
             ))}
           </ul>
