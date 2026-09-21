@@ -10,3 +10,15 @@ export const signUpSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email")),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
+
+export const householdNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter a household name")
+  .max(60, "Household name is too long");
+
+export const joinCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z0-9]{6}$/, "Join codes are 6 letters or numbers");
