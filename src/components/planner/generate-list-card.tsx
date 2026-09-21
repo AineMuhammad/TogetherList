@@ -27,7 +27,7 @@ export function GenerateListCard({ householdId, weekStart, plannedCount }: Props
           <p className="text-muted-foreground text-sm">
             {plannedCount === 0
               ? "Plan a few meals below, then turn them into a grocery list."
-              : `Combine the ingredients from ${plannedCount} planned ${plannedCount === 1 ? "meal" : "meals"} into your shared list. Items already on it are skipped.`}
+              : `Combine the ingredients from ${plannedCount} planned ${plannedCount === 1 ? "meal" : "meals"} into your shared list. Anything the list already covers is skipped, and only the extra amount is added.`}
           </p>
         </div>
         <Button
@@ -62,7 +62,7 @@ export function GenerateListCard({ householdId, weekStart, plannedCount }: Props
             {added > 0
               ? `Added ${added} ${added === 1 ? "item" : "items"} to your grocery list`
               : "Nothing new to add"}
-            {skipped > 0 && ` · ${skipped} already on the list`}
+            {skipped > 0 && ` · ${skipped} already covered`}
           </span>
           <Link href="/" className="underline underline-offset-2 hover:no-underline">
             View grocery list

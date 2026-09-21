@@ -253,6 +253,54 @@ function formatBucket(bucket: Bucket): string {
 // ---- Merging ----
 
 type Bucket = { kind: Family | "count" | "unit"; unit: string; total: number };
+type Group = { name: string; buckets: Map<string, Bucket> };
+
+/** Adds an amount to a group, bucketed so only compatible units are summed. */
+function addAmount(group: Group, quantity: number, unit: string | null) {
+  let id: string;
+  let kind: Bucket["kind"];
+  let amount = quantity;
+  const bucketUnit = unit ?? "";
+  if (unit === null) {
+    id = "count";
+    kind = "count";
+  } else if (unit in CONVERTIBLE) {
+    const [family, factor] = CONVERTIBLE[unit];
+    id = family;
+    kind = family;
+    amount *= factor;
+  } else {
+    id = `unit:${unit}`;
+    kind = "unit";
+  }
+  const bucket = group.buckets.get(id) ?? { kind, unit: bucketUnit, total: 0 };
+  bucket.total += amount;
+  group.buckets.set(id, bucket);
+}
+
+function collect(lines: string[]): Map<string, Group> {
+  const groups = new Map<string, Group>();
+  for (const line of lines) {
+    const parsed = parseIngredient(line);
+    if (!parsed) continue;
+    let group = groups.get(parsed.key);
+    if (!group) {
+      group = { name: parsed.name, buckets: new Map() };
+      groups.set(parsed.key, group);
+    }
+    if (parsed.quantity !== null) addAmount(group, parsed.quantity, parsed.unit);
+  }
+  return groups;
+}
+
+function display(key: string, name: string, buckets: Bucket[]): MergedIngredient {
+  const text = buckets.map(formatBucket).join(" + ");
+  return {
+    key,
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    quantity: text ? text.slice(0, 40) : null,
+  };
+}
 
 /**
  * Combines ingredient lines that refer to the same thing. Amounts in the same
@@ -260,44 +308,84 @@ type Bucket = { kind: Family | "count" | "unit"; unit: string; total: number };
  * added ("200g flour" + "1 cup flour") are listed side by side.
  */
 export function mergeIngredients(lines: string[]): MergedIngredient[] {
-  const groups = new Map<string, { name: string; buckets: Map<string, Bucket> }>();
+  return [...collect(lines).entries()].map(([key, g]) =>
+    display(key, g.name, [...g.buckets.values()]),
+  );
+}
 
-  for (const line of lines) {
-    const parsed = parseIngredient(line);
-    if (!parsed) continue;
+/** Parses a bare amount such as "2 cups", "500 g" or "1 1/2"; null if it isn't one. */
+function parseAmount(text: string): { quantity: number; unit: string | null } | null {
+  let t = text.toLowerCase();
+  for (const [glyph, replacement] of Object.entries(FRACTIONS))
+    t = t.replaceAll(glyph, ` ${replacement}`);
+  t = t.replace(/\s+/g, " ").trim();
+  const qty = LEADING_QTY.exec(t);
+  if (!qty) return null;
+  const rest = t.slice(qty[0].length).trim();
+  const quantity = toNumber(qty[2] ?? qty[1]);
+  if (!rest) return { quantity, unit: null };
+  const unit = canonicalUnit(rest);
+  return unit ? { quantity, unit } : null;
+}
 
-    let group = groups.get(parsed.key);
-    if (!group) {
-      group = { name: parsed.name, buckets: new Map() };
-      groups.set(parsed.key, group);
+export type ExistingItem = { name: string; quantity: string | null };
+
+const EPSILON = 1e-6;
+
+/**
+ * Works out what still needs buying. Amounts already on the (unchecked) list are
+ * subtracted from what the recipes need, so only a shortfall is returned; an
+ * ingredient that is fully covered is reported as skipped. An existing item with
+ * no readable amount (e.g. a hand-typed "Onion") is treated as covering it.
+ */
+export function diffAgainstList(
+  lines: string[],
+  existing: ExistingItem[],
+): { toAdd: MergedIngredient[]; skipped: string[] } {
+  const needed = collect(lines);
+
+  const onList = new Map<string, Group & { hasAmount: boolean }>();
+  for (const item of existing) {
+    const key = ingredientKey(item.name);
+    if (!key) continue;
+    const group = onList.get(key) ?? {
+      name: item.name,
+      buckets: new Map(),
+      hasAmount: false,
+    };
+    for (const part of (item.quantity ?? "").split("+")) {
+      const amount = parseAmount(part);
+      if (amount) {
+        addAmount(group, amount.quantity, amount.unit);
+        group.hasAmount = true;
+      }
     }
-    if (parsed.quantity === null) continue;
-
-    let id: string;
-    let bucket: Bucket;
-    let amount = parsed.quantity;
-    if (parsed.unit === null) {
-      id = "count";
-      bucket = group.buckets.get(id) ?? { kind: "count", unit: "", total: 0 };
-    } else if (parsed.unit in CONVERTIBLE) {
-      const [family, factor] = CONVERTIBLE[parsed.unit];
-      id = family;
-      amount *= factor;
-      bucket = group.buckets.get(id) ?? { kind: family, unit: parsed.unit, total: 0 };
-    } else {
-      id = `unit:${parsed.unit}`;
-      bucket = group.buckets.get(id) ?? { kind: "unit", unit: parsed.unit, total: 0 };
-    }
-    bucket.total += amount;
-    group.buckets.set(id, bucket);
+    onList.set(key, group);
   }
 
-  return [...groups.entries()].map(([key, { name, buckets }]) => {
-    const text = [...buckets.values()].map(formatBucket).join(" + ");
-    return {
-      key,
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      quantity: text ? text.slice(0, 40) : null,
-    };
-  });
+  const toAdd: MergedIngredient[] = [];
+  const skipped: string[] = [];
+
+  for (const [key, group] of needed) {
+    const have = onList.get(key);
+    const label = group.name.charAt(0).toUpperCase() + group.name.slice(1);
+    if (!have) {
+      toAdd.push(display(key, group.name, [...group.buckets.values()]));
+      continue;
+    }
+    // Already listed but with no usable amount, or nothing measurable is needed.
+    if (!have.hasAmount || group.buckets.size === 0) {
+      skipped.push(label);
+      continue;
+    }
+    const shortfall: Bucket[] = [];
+    for (const [id, bucket] of group.buckets) {
+      const owned = have.buckets.get(id)?.total ?? 0;
+      const remaining = bucket.total - owned;
+      if (remaining > EPSILON) shortfall.push({ ...bucket, total: remaining });
+    }
+    if (shortfall.length === 0) skipped.push(label);
+    else toAdd.push(display(key, group.name, shortfall));
+  }
+  return { toAdd, skipped };
 }

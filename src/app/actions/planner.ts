@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { categorize } from "@/lib/categorize";
 import { addDays, parseDateString, startOfWeek } from "@/lib/dates";
-import { ingredientKey, mergeIngredients } from "@/lib/ingredients";
+import { diffAgainstList } from "@/lib/ingredients";
 import { getMembership, requireUser } from "@/lib/household";
 import { MealSlot } from "@/generated/prisma/enums";
 
@@ -53,7 +53,7 @@ export type GenerateResult = { error?: string; added?: string[]; skipped?: strin
 
 /**
  * Turns the week's planned meals into grocery items: ingredient lines from every
- * planned recipe are merged, and anything already on the list (unchecked) is skipped.
+ * planned recipe are merged, and only what the unchecked list doesn't already cover is added.
  */
 export async function generateGroceryFromPlan(
   householdId: string,
@@ -75,16 +75,15 @@ export async function generateGroceryFromPlan(
   if (entries.length === 0) return { error: "No meals are planned for this week yet." };
 
   // Each planned meal counts, so a recipe planned twice doubles its ingredients.
-  const merged = mergeIngredients(entries.flatMap((e) => e.recipe.ingredients));
-
-  const unchecked = await db.groceryItem.findMany({
+  // Amounts already on the unchecked list are subtracted; only a shortfall is added.
+  const onList = await db.groceryItem.findMany({
     where: { householdId, checked: false },
-    select: { name: true },
+    select: { name: true, quantity: true },
   });
-  const onList = new Set(unchecked.map((i) => ingredientKey(i.name)));
-
-  const toAdd = merged.filter((m) => !onList.has(m.key));
-  const skipped = merged.filter((m) => onList.has(m.key)).map((m) => m.name);
+  const { toAdd, skipped } = diffAgainstList(
+    entries.flatMap((e) => e.recipe.ingredients),
+    onList,
+  );
 
   if (toAdd.length > 0) {
     await db.groceryItem.createMany({
