@@ -1,12 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
 import { Check, Ellipsis, Trash2 } from "lucide-react";
-import {
-  removeGroceryItem,
-  setGroceryItemCategory,
-  toggleGroceryItem,
-} from "@/app/actions/grocery";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,13 +10,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { GroceryCategory } from "@/generated/prisma/enums";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import type { GroceryItemView } from "./types";
 import { CATEGORY_ICONS } from "./category-meta";
 
-export function GroceryItemRow({ item }: { item: GroceryItemView }) {
-  const [pending, startTransition] = useTransition();
+type Props = {
+  item: GroceryItemView;
+  onToggle: (id: string, checked: boolean) => void;
+  onSetCategory: (id: string, category: GroceryCategory) => void;
+  onRemove: (id: string) => void;
+};
+
+export function GroceryItemRow({ item, onToggle, onSetCategory, onRemove }: Props) {
+  const pending = !!item.pending;
 
   return (
     <li className={cn("flex items-center gap-3 px-4 py-2.5", pending && "opacity-60")}>
@@ -31,7 +33,8 @@ export function GroceryItemRow({ item }: { item: GroceryItemView }) {
         role="checkbox"
         aria-checked={item.checked}
         aria-label={`${item.checked ? "Uncheck" : "Check off"} ${item.name}`}
-        onClick={() => startTransition(() => toggleGroceryItem(item.id, !item.checked))}
+        disabled={pending}
+        onClick={() => onToggle(item.id, !item.checked)}
         className={cn(
           "focus-visible:ring-ring/50 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-colors outline-none focus-visible:ring-3",
           item.checked
@@ -66,6 +69,7 @@ export function GroceryItemRow({ item }: { item: GroceryItemView }) {
 
       <DropdownMenu>
         <DropdownMenuTrigger
+          disabled={pending}
           aria-label={`Options for ${item.name}`}
           className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-3"
         >
@@ -80,9 +84,7 @@ export function GroceryItemRow({ item }: { item: GroceryItemView }) {
                 <DropdownMenuItem
                   key={c}
                   className="py-2"
-                  onClick={() =>
-                    startTransition(() => setGroceryItemCategory(item.id, c))
-                  }
+                  onClick={() => onSetCategory(item.id, c)}
                 >
                   <Icon /> <span className="flex-1">{CATEGORY_LABELS[c]}</span>
                   {c === item.category && <Check className="text-primary" />}
@@ -94,7 +96,7 @@ export function GroceryItemRow({ item }: { item: GroceryItemView }) {
           <DropdownMenuItem
             variant="destructive"
             className="py-2"
-            onClick={() => startTransition(() => removeGroceryItem(item.id))}
+            onClick={() => onRemove(item.id)}
           >
             <Trash2 /> Remove item
           </DropdownMenuItem>

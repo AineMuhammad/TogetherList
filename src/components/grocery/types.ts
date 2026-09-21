@@ -7,4 +7,6 @@ export type GroceryItemView = {
   category: GroceryCategory;
   checked: boolean;
   addedByName: string | null;
+  /** True for an optimistic item the server hasn't confirmed yet. */
+  pending?: boolean;
 };

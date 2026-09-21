@@ -1,35 +1,53 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
-import { addGroceryItem } from "@/app/actions/grocery";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { Card } from "@/components/ui/card";
+import type { GroceryCategory } from "@/generated/prisma/enums";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/categories";
 
-export function AddItemForm({ householdId }: { householdId: string }) {
-  const [state, formAction, pending] = useActionState(
-    addGroceryItem.bind(null, householdId),
-    undefined,
-  );
+type Props = {
+  onAdd: (input: {
+    name: string;
+    quantity: string;
+    category: GroceryCategory | null;
+  }) => Promise<string | null>;
+};
+
+export function AddItemForm({ onAdd }: Props) {
+  const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
-  const wasPending = useRef(false);
-
-  // Clear and refocus once an add succeeds, ready for the next item.
-  useEffect(() => {
-    if (wasPending.current && !pending && !state?.error) {
-      formRef.current?.reset();
-      nameRef.current?.focus();
-    }
-    wasPending.current = pending;
-  }, [pending, state]);
 
   return (
     <Card className="p-0">
-      <form ref={formRef} action={formAction} className="space-y-3 p-4">
+      <form
+        ref={formRef}
+        className="space-y-3 p-4"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const data = new FormData(e.currentTarget);
+          const name = String(data.get("name") ?? "").trim();
+          if (!name) return setError("Enter an item");
+          const category = String(data.get("category") ?? "AUTO");
+
+          // The item appears instantly, so clear the form right away.
+          setError(null);
+          const input = {
+            name,
+            quantity: String(data.get("quantity") ?? ""),
+            category: category === "AUTO" ? null : (category as GroceryCategory),
+          };
+          formRef.current?.reset();
+          nameRef.current?.focus();
+
+          const err = await onAdd(input);
+          if (err) setError(err);
+        }}
+      >
         <div className="flex gap-2">
           <Input
             ref={nameRef}
@@ -64,16 +82,16 @@ export function AddItemForm({ householdId }: { householdId: string }) {
               </option>
             ))}
           </NativeSelect>
-          <Button type="submit" disabled={pending}>
-            <Plus /> {pending ? "Adding…" : "Add"}
+          <Button type="submit">
+            <Plus /> Add
           </Button>
         </div>
-        {state?.error && (
+        {error && (
           <p
             role="alert"
             className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-sm font-medium"
           >
-            {state.error}
+            {error}
           </p>
         )}
       </form>

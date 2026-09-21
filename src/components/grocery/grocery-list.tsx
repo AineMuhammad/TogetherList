@@ -1,19 +1,29 @@
 "use client";
 
-import { useTransition } from "react";
 import { ShoppingBasket } from "lucide-react";
-import { clearCheckedItems } from "@/app/actions/grocery";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/categories";
 import { CATEGORY_ICONS } from "./category-meta";
 import { GroceryItemRow } from "./grocery-item-row";
+import type { GroceryCategory } from "@/generated/prisma/enums";
 import type { GroceryItemView } from "./types";
 
-type Props = { householdId: string; items: GroceryItemView[] };
+type Props = {
+  items: GroceryItemView[];
+  onToggle: (id: string, checked: boolean) => void;
+  onSetCategory: (id: string, category: GroceryCategory) => void;
+  onRemove: (id: string) => void;
+  onClearChecked: () => void;
+};
 
-export function GroceryList({ householdId, items }: Props) {
-  const [clearing, startTransition] = useTransition();
+export function GroceryList({
+  items,
+  onToggle,
+  onSetCategory,
+  onRemove,
+  onClearChecked,
+}: Props) {
   const todo = items.filter((i) => !i.checked);
   const done = items.filter((i) => i.checked);
 
@@ -58,7 +68,13 @@ export function GroceryList({ householdId, items }: Props) {
             <Card className="gap-0 overflow-visible p-0">
               <ul className="divide-y">
                 {group.map((item) => (
-                  <GroceryItemRow key={item.id} item={item} />
+                  <GroceryItemRow
+                    key={item.id}
+                    item={item}
+                    onToggle={onToggle}
+                    onSetCategory={onSetCategory}
+                    onRemove={onRemove}
+                  />
                 ))}
               </ul>
             </Card>
@@ -72,19 +88,20 @@ export function GroceryList({ householdId, items }: Props) {
             <h2 className="text-muted-foreground text-sm font-bold tracking-wide uppercase">
               Checked off ({done.length})
             </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={clearing}
-              onClick={() => startTransition(() => clearCheckedItems(householdId))}
-            >
-              {clearing ? "Clearing…" : "Clear checked"}
+            <Button variant="ghost" size="sm" onClick={onClearChecked}>
+              Clear checked
             </Button>
           </div>
           <Card className="gap-0 overflow-visible p-0">
             <ul className="divide-y">
               {done.map((item) => (
-                <GroceryItemRow key={item.id} item={item} />
+                <GroceryItemRow
+                  key={item.id}
+                  item={item}
+                  onToggle={onToggle}
+                  onSetCategory={onSetCategory}
+                  onRemove={onRemove}
+                />
               ))}
             </ul>
           </Card>

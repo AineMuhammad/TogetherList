@@ -1,12 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { categorize } from "@/lib/categorize";
 import { getMembership, requireUser } from "@/lib/household";
 import { groceryItemSchema } from "@/lib/validation";
 import { GroceryCategory } from "@/generated/prisma/enums";
-import type { FormState } from "@/app/actions/auth";
 
 async function requireMember(householdId: string) {
   const user = await requireUser();
@@ -25,16 +23,14 @@ async function requireItem(itemId: string) {
 
 export async function addGroceryItem(
   householdId: string,
-  _: FormState,
-  formData: FormData,
-): Promise<FormState> {
+  input: { name: string; quantity?: string; category?: string | null },
+): Promise<{ error?: string }> {
   const user = await requireMember(householdId);
 
-  const override = formData.get("category");
   const parsed = groceryItemSchema.safeParse({
-    name: formData.get("name") ?? "",
-    quantity: formData.get("quantity") ?? "",
-    category: override && override !== "AUTO" ? override : null,
+    name: input.name ?? "",
+    quantity: input.quantity ?? "",
+    category: input.category && input.category !== "AUTO" ? input.category : null,
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { name, quantity, category } = parsed.data;
@@ -48,8 +44,7 @@ export async function addGroceryItem(
       addedById: user.id,
     },
   });
-  revalidatePath("/");
-  return undefined;
+  return {};
 }
 
 export async function toggleGroceryItem(itemId: string, checked: boolean) {
@@ -59,7 +54,6 @@ export async function toggleGroceryItem(itemId: string, checked: boolean) {
     where: { id: itemId },
     data: { checked, checkedAt: checked ? new Date() : null },
   });
-  revalidatePath("/");
 }
 
 export async function setGroceryItemCategory(itemId: string, category: string) {
@@ -68,18 +62,15 @@ export async function setGroceryItemCategory(itemId: string, category: string) {
   const item = await requireItem(itemId);
   if (!item) return;
   await db.groceryItem.update({ where: { id: itemId }, data: { category: parsed } });
-  revalidatePath("/");
 }
 
 export async function removeGroceryItem(itemId: string) {
   const item = await requireItem(itemId);
   if (!item) return;
   await db.groceryItem.delete({ where: { id: itemId } });
-  revalidatePath("/");
 }
 
 export async function clearCheckedItems(householdId: string) {
   await requireMember(householdId);
   await db.groceryItem.deleteMany({ where: { householdId, checked: true } });
-  revalidatePath("/");
 }
