@@ -1,28 +1,39 @@
-import { ShoppingBasket } from "lucide-react";
+import { db } from "@/lib/db";
 import { requireActiveMembership } from "@/lib/household";
+import { AddItemForm } from "@/components/grocery/add-item-form";
+import { GroceryList } from "@/components/grocery/grocery-list";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card } from "@/components/ui/card";
 
 export const metadata = { title: "Grocery list" };
 
 export default async function HomePage() {
   const { active } = await requireActiveMembership();
+  const { household } = active;
+
+  const items = await db.groceryItem.findMany({
+    where: { householdId: household.id },
+    include: { addedBy: { select: { name: true } } },
+    orderBy: { createdAt: "asc" },
+  });
 
   return (
-    <>
+    <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader
         title="Grocery list"
-        description={`Shared with everyone in ${active.household.name}.`}
+        description={`Shared with everyone in ${household.name}.`}
       />
-      <Card className="items-center px-6 py-14 text-center">
-        <span className="bg-accent text-accent-foreground flex size-14 items-center justify-center rounded-2xl">
-          <ShoppingBasket className="size-7" />
-        </span>
-        <h2 className="mt-2 text-lg font-bold">Your list is coming soon</h2>
-        <p className="text-muted-foreground max-w-sm">
-          Add and check off groceries together. This arrives in the next update.
-        </p>
-      </Card>
-    </>
+      <AddItemForm householdId={household.id} />
+      <GroceryList
+        householdId={household.id}
+        items={items.map((i) => ({
+          id: i.id,
+          name: i.name,
+          quantity: i.quantity,
+          category: i.category,
+          checked: i.checked,
+          addedByName: i.addedBy?.name ?? null,
+        }))}
+      />
+    </div>
   );
 }
