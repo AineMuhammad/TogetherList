@@ -87,7 +87,7 @@ export default async function SettingsPage() {
                   disabled={!isOwner}
                 />
                 <p className="text-muted-foreground text-xs">
-                  We&apos;ll email a reminder with the grocery list on this day.
+                  The day your household usually does the grocery shop.
                 </p>
               </div>
             </CardContent>
