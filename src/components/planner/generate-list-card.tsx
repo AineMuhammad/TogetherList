@@ -14,6 +14,7 @@ export function GenerateListCard({ householdId, weekStart, plannedCount }: Props
   const [result, setResult] = useState<GenerateResult | null>(null);
 
   const added = result?.added?.length ?? 0;
+  const updated = result?.updated?.length ?? 0;
   const skipped = result?.skipped?.length ?? 0;
 
   return (
@@ -27,7 +28,7 @@ export function GenerateListCard({ householdId, weekStart, plannedCount }: Props
           <p className="text-muted-foreground text-sm">
             {plannedCount === 0
               ? "Plan a few meals below, then turn them into a grocery list."
-              : `Combine the ingredients from ${plannedCount} planned ${plannedCount === 1 ? "meal" : "meals"} into your shared list. Anything the list already covers is skipped, and only the extra amount is added.`}
+              : `Combine the ingredients from ${plannedCount} planned ${plannedCount === 1 ? "meal" : "meals"} into your shared list. Items already listed just get their quantity raised.`}
           </p>
         </div>
         <Button
@@ -59,10 +60,17 @@ export function GenerateListCard({ householdId, weekStart, plannedCount }: Props
         >
           <Check className="size-4 shrink-0" />
           <span className="min-w-0 flex-1">
-            {added > 0
-              ? `Added ${added} ${added === 1 ? "item" : "items"} to your grocery list`
-              : "Nothing new to add"}
-            {skipped > 0 && ` · ${skipped} already covered`}
+            {added + updated === 0
+              ? "Your list already covers this week"
+              : [
+                  added > 0 && `Added ${added} new ${added === 1 ? "item" : "items"}`,
+                  updated > 0 &&
+                    `raised ${updated} ${updated === 1 ? "quantity" : "quantities"}`,
+                ]
+                  .filter(Boolean)
+                  .join(", ")
+                  .replace(/^./, (c) => c.toUpperCase())}
+            {skipped > 0 && added + updated > 0 && ` · ${skipped} already covered`}
           </span>
           <Link href="/" className="underline underline-offset-2 hover:no-underline">
             View grocery list

@@ -328,64 +328,84 @@ function parseAmount(text: string): { quantity: number; unit: string | null } | 
   return unit ? { quantity, unit } : null;
 }
 
-export type ExistingItem = { name: string; quantity: string | null };
+export type ExistingItem = { id: string; name: string; quantity: string | null };
+export type QuantityUpdate = { id: string; name: string; quantity: string };
 
 const EPSILON = 1e-6;
 
 /**
- * Works out what still needs buying. Amounts already on the (unchecked) list are
- * subtracted from what the recipes need, so only a shortfall is returned; an
- * ingredient that is fully covered is reported as skipped. An existing item with
- * no readable amount (e.g. a hand-typed "Onion") is treated as covering it.
+ * Works out how to bring the (unchecked) grocery list up to what the recipes
+ * need, without ever creating a second row for something already listed:
+ *  - not on the list            -> `toAdd` a new row
+ *  - listed, amount too small   -> `toUpdate` raises that row's quantity
+ *  - listed, already enough     -> `skipped`
+ * An existing item with no readable amount (a hand-typed "Onion") is treated as
+ * covering the ingredient and left alone, since there's nothing to add to.
  */
-export function diffAgainstList(
+export function planGroceryChanges(
   lines: string[],
   existing: ExistingItem[],
-): { toAdd: MergedIngredient[]; skipped: string[] } {
+): { toAdd: MergedIngredient[]; toUpdate: QuantityUpdate[]; skipped: string[] } {
   const needed = collect(lines);
 
-  const onList = new Map<string, Group & { hasAmount: boolean }>();
+  type Listed = Group & {
+    target?: { id: string; name: string; buckets: Map<string, Bucket> };
+  };
+  const onList = new Map<string, Listed>();
   for (const item of existing) {
     const key = ingredientKey(item.name);
     if (!key) continue;
-    const group = onList.get(key) ?? {
-      name: item.name,
-      buckets: new Map(),
-      hasAmount: false,
-    };
+    const listed: Listed = onList.get(key) ?? { name: item.name, buckets: new Map() };
+    const own: Group = { name: item.name, buckets: new Map() };
     for (const part of (item.quantity ?? "").split("+")) {
       const amount = parseAmount(part);
-      if (amount) {
-        addAmount(group, amount.quantity, amount.unit);
-        group.hasAmount = true;
-      }
+      if (amount) addAmount(own, amount.quantity, amount.unit);
     }
-    onList.set(key, group);
+    for (const [id, bucket] of own.buckets) {
+      const total = listed.buckets.get(id);
+      if (total) total.total += bucket.total;
+      else listed.buckets.set(id, { ...bucket });
+    }
+    // The first row with a real amount is the one we grow.
+    if (!listed.target && own.buckets.size > 0) {
+      listed.target = { id: item.id, name: item.name, buckets: own.buckets };
+    }
+    onList.set(key, listed);
   }
 
   const toAdd: MergedIngredient[] = [];
+  const toUpdate: QuantityUpdate[] = [];
   const skipped: string[] = [];
 
   for (const [key, group] of needed) {
-    const have = onList.get(key);
+    const listed = onList.get(key);
     const label = group.name.charAt(0).toUpperCase() + group.name.slice(1);
-    if (!have) {
+    if (!listed) {
       toAdd.push(display(key, group.name, [...group.buckets.values()]));
       continue;
     }
-    // Already listed but with no usable amount, or nothing measurable is needed.
-    if (!have.hasAmount || group.buckets.size === 0) {
+    if (!listed.target || group.buckets.size === 0) {
       skipped.push(label);
       continue;
     }
-    const shortfall: Bucket[] = [];
+
+    // Grow the target row by whatever the whole list is still short of.
+    const grown = new Map([...listed.target.buckets].map(([id, b]) => [id, { ...b }]));
+    let changed = false;
     for (const [id, bucket] of group.buckets) {
-      const owned = have.buckets.get(id)?.total ?? 0;
-      const remaining = bucket.total - owned;
-      if (remaining > EPSILON) shortfall.push({ ...bucket, total: remaining });
+      const remaining = bucket.total - (listed.buckets.get(id)?.total ?? 0);
+      if (remaining <= EPSILON) continue;
+      const current = grown.get(id);
+      if (current) current.total += remaining;
+      else grown.set(id, { ...bucket, total: remaining });
+      changed = true;
     }
-    if (shortfall.length === 0) skipped.push(label);
-    else toAdd.push(display(key, group.name, shortfall));
+    if (!changed) {
+      skipped.push(label);
+      continue;
+    }
+    const text = [...grown.values()].map(formatBucket).join(" + ").slice(0, 40);
+    toUpdate.push({ id: listed.target.id, name: label, quantity: text });
   }
-  return { toAdd, skipped };
+  return { toAdd, toUpdate, skipped };
 }

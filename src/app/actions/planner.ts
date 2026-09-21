@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { categorize } from "@/lib/categorize";
 import { addDays, parseDateString, startOfWeek } from "@/lib/dates";
-import { diffAgainstList } from "@/lib/ingredients";
+import { planGroceryChanges } from "@/lib/ingredients";
 import { getMembership, requireUser } from "@/lib/household";
 import { MealSlot } from "@/generated/prisma/enums";
 
@@ -49,11 +49,16 @@ export async function removeMealPlanEntry(entryId: string): Promise<{ error?: st
   return {};
 }
 
-export type GenerateResult = { error?: string; added?: string[]; skipped?: string[] };
+export type GenerateResult = {
+  error?: string;
+  added?: string[];
+  updated?: string[];
+  skipped?: string[];
+};
 
 /**
  * Turns the week's planned meals into grocery items: ingredient lines from every
- * planned recipe are merged, and only what the unchecked list doesn't already cover is added.
+ * planned recipe are merged, and new ingredients are added, and rows already on the unchecked list have their quantity raised (never duplicated).
  */
 export async function generateGroceryFromPlan(
   householdId: string,
@@ -75,18 +80,21 @@ export async function generateGroceryFromPlan(
   if (entries.length === 0) return { error: "No meals are planned for this week yet." };
 
   // Each planned meal counts, so a recipe planned twice doubles its ingredients.
-  // Amounts already on the unchecked list are subtracted; only a shortfall is added.
   const onList = await db.groceryItem.findMany({
     where: { householdId, checked: false },
-    select: { name: true, quantity: true },
+    select: { id: true, name: true, quantity: true },
+    orderBy: { createdAt: "asc" },
   });
-  const { toAdd, skipped } = diffAgainstList(
+  const { toAdd, toUpdate, skipped } = planGroceryChanges(
     entries.flatMap((e) => e.recipe.ingredients),
     onList,
   );
 
-  if (toAdd.length > 0) {
-    await db.groceryItem.createMany({
+  await db.$transaction([
+    ...toUpdate.map((u) =>
+      db.groceryItem.update({ where: { id: u.id }, data: { quantity: u.quantity } }),
+    ),
+    db.groceryItem.createMany({
       data: toAdd.map((m) => ({
         householdId,
         name: m.name.slice(0, 100),
@@ -94,8 +102,12 @@ export async function generateGroceryFromPlan(
         category: categorize(m.name),
         addedById: user.id,
       })),
-    });
-  }
+    }),
+  ]);
   revalidatePath("/");
-  return { added: toAdd.map((m) => m.name), skipped };
+  return {
+    added: toAdd.map((m) => m.name),
+    updated: toUpdate.map((u) => u.name),
+    skipped,
+  };
 }
