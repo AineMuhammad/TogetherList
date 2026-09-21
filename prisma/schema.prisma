@@ -18,8 +18,11 @@ model User {
   passwordHash  String?
   createdAt     DateTime  @default(now())
 
-  accounts Account[]
-  sessions Session[]
+  accounts     Account[]
+  sessions     Session[]
+  memberships  HouseholdMember[]
+  groceryItems GroceryItem[]
+  recipes      Recipe[]
 }
 
 model Account {
@@ -56,4 +59,112 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// ---- TogetherList domain models ----
+
+enum ShoppingDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
+enum GroceryCategory {
+  PRODUCE
+  DAIRY
+  MEAT
+  PANTRY
+  FROZEN
+  HOUSEHOLD
+  OTHER
+}
+
+enum MealSlot {
+  BREAKFAST
+  LUNCH
+  DINNER
+}
+
+model Household {
+  id          String      @id @default(cuid())
+  name        String
+  joinCode    String      @unique
+  shoppingDay ShoppingDay @default(SATURDAY)
+  createdAt   DateTime    @default(now())
+
+  members      HouseholdMember[]
+  groceryItems GroceryItem[]
+  recipes      Recipe[]
+  mealPlan     MealPlanEntry[]
+}
+
+model HouseholdMember {
+  id          String     @id @default(cuid())
+  householdId String
+  userId      String
+  role        MemberRole @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@index([userId])
+}
+
+model GroceryItem {
+  id          String          @id @default(cuid())
+  householdId String
+  name        String
+  category    GroceryCategory @default(OTHER)
+  quantity    String?
+  checked     Boolean         @default(false)
+  addedById   String?
+  createdAt   DateTime        @default(now())
+  checkedAt   DateTime?
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  addedBy   User?     @relation(fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@index([householdId, checked])
+}
+
+model Recipe {
+  id           String   @id @default(cuid())
+  householdId  String
+  name         String
+  // One free-text line per ingredient, e.g. "2 cups flour"
+  ingredients  String[]
+  instructions String?
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  household Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  mealPlan  MealPlanEntry[]
+
+  @@index([householdId])
+}
+
+model MealPlanEntry {
+  id          String   @id @default(cuid())
+  householdId String
+  date        DateTime @db.Date
+  mealSlot    MealSlot
+  recipeId    String
+  createdAt   DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  recipe    Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, date])
 }
