@@ -12,7 +12,7 @@ export default async function EditRecipePage({
   const recipe = await getRecipeForActiveHousehold(id);
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-5xl">
       <PageHeader title="Edit recipe" description={recipe.name} />
       <RecipeForm
         action={updateRecipe.bind(null, recipe.id)}

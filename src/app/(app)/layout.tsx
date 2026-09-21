@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         }))}
         activeId={active?.householdId ?? null}
       />
-      <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-28 md:pt-10 md:pb-16">
+      <main className="mx-auto w-full max-w-[90rem] px-4 pt-6 pb-28 sm:px-6 md:pt-10 md:pb-16 lg:px-8">
         {children}
       </main>
     </div>

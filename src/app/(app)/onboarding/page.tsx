@@ -27,7 +27,7 @@ export default async function OnboardingPage() {
   await requireUser();
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <PageHeader
         title="Set up your household"
         description="Start a new household, or join one with a code from someone you live with."

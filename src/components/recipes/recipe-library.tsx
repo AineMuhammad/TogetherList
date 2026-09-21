@@ -59,7 +59,7 @@ export function RecipeLibrary({ recipes }: { recipes: RecipeSummary[] }) {
           No recipes match &quot;{query}&quot;.
         </p>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map((r) => (
             <li key={r.id}>
               <Link

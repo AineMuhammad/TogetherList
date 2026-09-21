@@ -24,7 +24,7 @@ export function RecipeForm({ action, cancelHref, submitLabel, initial }: Props) 
   return (
     <Card className="p-0">
       <form action={formAction} className="space-y-6 p-5 sm:p-6">
-        <div className="space-y-2">
+        <div className="max-w-xl space-y-2">
           <Label htmlFor="name">Recipe name</Label>
           <Input
             id="name"
@@ -36,37 +36,39 @@ export function RecipeForm({ action, cancelHref, submitLabel, initial }: Props) 
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="ingredients">Ingredients</Label>
-          <Textarea
-            id="ingredients"
-            name="ingredients"
-            rows={8}
-            required
-            placeholder={
-              "500g minced beef\n1 onion\n2 cloves garlic\n400g canned tomatoes"
-            }
-            defaultValue={v?.ingredients ?? initial?.ingredients.join("\n") ?? ""}
-            className="font-medium"
-          />
-          <p className="text-muted-foreground text-xs">
-            One ingredient per line. Quantities are welcome, e.g. &quot;2 cups
-            flour&quot;.
-          </p>
-        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="ingredients">Ingredients</Label>
+            <Textarea
+              id="ingredients"
+              name="ingredients"
+              rows={8}
+              required
+              placeholder={
+                "500g minced beef\n1 onion\n2 cloves garlic\n400g canned tomatoes"
+              }
+              defaultValue={v?.ingredients ?? initial?.ingredients.join("\n") ?? ""}
+              className="font-medium"
+            />
+            <p className="text-muted-foreground text-xs">
+              One ingredient per line. Quantities are welcome, e.g. &quot;2 cups
+              flour&quot;.
+            </p>
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="instructions">
-            Instructions{" "}
-            <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
-          <Textarea
-            id="instructions"
-            name="instructions"
-            rows={7}
-            placeholder="Brown the beef, add the onion and garlic…"
-            defaultValue={v?.instructions ?? initial?.instructions ?? ""}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="instructions">
+              Instructions{" "}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Textarea
+              id="instructions"
+              name="instructions"
+              rows={7}
+              placeholder="Brown the beef, add the onion and garlic…"
+              defaultValue={v?.instructions ?? initial?.instructions ?? ""}
+            />
+          </div>
         </div>
 
         {state?.error && (

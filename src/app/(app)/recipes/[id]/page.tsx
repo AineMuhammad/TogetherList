@@ -11,7 +11,7 @@ export default async function RecipePage({ params }: PageProps<"/recipes/[id]">)
   const recipe = await getRecipeForActiveHousehold(id);
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl space-y-6">
       <Button
         variant="ghost"
         size="sm"

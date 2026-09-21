@@ -52,35 +52,41 @@ export function GroceryList({
         </Card>
       )}
 
-      {CATEGORY_ORDER.map((category) => {
-        const group = todo.filter((i) => i.category === category);
-        if (group.length === 0) return null;
-        const Icon = CATEGORY_ICONS[category];
-        return (
-          <section key={category} aria-label={CATEGORY_LABELS[category]}>
-            <h2 className="text-muted-foreground mb-2 flex items-center gap-2 px-1 text-sm font-bold tracking-wide uppercase">
-              <Icon className="text-primary size-4" />
-              {CATEGORY_LABELS[category]}
-              <span className="bg-secondary rounded-full px-2 py-0.5 text-xs">
-                {group.length}
-              </span>
-            </h2>
-            <Card className="gap-0 overflow-visible p-0">
-              <ul className="divide-y">
-                {group.map((item) => (
-                  <GroceryItemRow
-                    key={item.id}
-                    item={item}
-                    onToggle={onToggle}
-                    onSetCategory={onSetCategory}
-                    onRemove={onRemove}
-                  />
-                ))}
-              </ul>
-            </Card>
-          </section>
-        );
-      })}
+      <div className="space-y-5 xl:block xl:columns-2 xl:gap-6 xl:space-y-0">
+        {CATEGORY_ORDER.map((category) => {
+          const group = todo.filter((i) => i.category === category);
+          if (group.length === 0) return null;
+          const Icon = CATEGORY_ICONS[category];
+          return (
+            <section
+              key={category}
+              aria-label={CATEGORY_LABELS[category]}
+              className="xl:mb-5 xl:break-inside-avoid"
+            >
+              <h2 className="text-muted-foreground mb-2 flex items-center gap-2 px-1 text-sm font-bold tracking-wide uppercase">
+                <Icon className="text-primary size-4" />
+                {CATEGORY_LABELS[category]}
+                <span className="bg-secondary rounded-full px-2 py-0.5 text-xs">
+                  {group.length}
+                </span>
+              </h2>
+              <Card className="gap-0 overflow-visible p-0">
+                <ul className="divide-y">
+                  {group.map((item) => (
+                    <GroceryItemRow
+                      key={item.id}
+                      item={item}
+                      onToggle={onToggle}
+                      onSetCategory={onSetCategory}
+                      onRemove={onRemove}
+                    />
+                  ))}
+                </ul>
+              </Card>
+            </section>
+          );
+        })}
+      </div>
 
       {done.length > 0 && (
         <section aria-label="Checked off">

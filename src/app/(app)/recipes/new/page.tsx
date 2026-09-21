@@ -9,7 +9,7 @@ export default async function NewRecipePage() {
   const { active } = await requireActiveMembership();
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-5xl">
       <PageHeader
         title="New recipe"
         description="Add a meal to your household's library."
