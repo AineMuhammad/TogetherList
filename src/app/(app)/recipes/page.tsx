@@ -16,7 +16,7 @@ export default async function RecipesPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <PageHeader
         title="Recipes"
         description={`${active.household.name}'s recipe library.`}

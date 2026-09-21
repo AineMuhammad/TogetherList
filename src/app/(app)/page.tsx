@@ -11,7 +11,7 @@ export default async function HomePage() {
   const initialItems = await getGroceryItems(household.id);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6">
       <PageHeader
         title="Grocery list"
         description={`Shared with everyone in ${household.name}.`}

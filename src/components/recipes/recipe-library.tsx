@@ -42,7 +42,7 @@ export function RecipeLibrary({ recipes }: { recipes: RecipeSummary[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="relative">
+      <div className="relative max-w-md">
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
           type="search"
@@ -59,7 +59,7 @@ export function RecipeLibrary({ recipes }: { recipes: RecipeSummary[] }) {
           No recipes match &quot;{query}&quot;.
         </p>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((r) => (
             <li key={r.id}>
               <Link

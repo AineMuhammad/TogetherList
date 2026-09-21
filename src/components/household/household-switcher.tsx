@@ -28,7 +28,7 @@ export function HouseholdSwitcher({ households, activeId }: Props) {
       <DropdownMenuTrigger
         aria-label="Switch household"
         disabled={pending}
-        className="bg-card hover:bg-muted focus-visible:ring-ring/50 flex h-10 max-w-44 min-w-0 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-sm font-semibold shadow-xs transition-colors outline-none focus-visible:ring-3 disabled:opacity-60 sm:max-w-56"
+        className="bg-card hover:bg-muted focus-visible:ring-ring/50 flex h-10 max-w-40 min-w-0 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-sm font-semibold shadow-xs transition-colors outline-none focus-visible:ring-3 disabled:opacity-60 lg:max-w-60"
       >
         <House className="text-primary size-4 shrink-0" />
         <span className="truncate">{active.name}</span>

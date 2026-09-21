@@ -27,7 +27,7 @@ export function GroceryItemRow({ item, onToggle, onSetCategory, onRemove }: Prop
   const pending = !!item.pending;
 
   return (
-    <li className={cn("flex items-center gap-3 px-4 py-2.5", pending && "opacity-60")}>
+    <li className={cn("flex items-center gap-3 px-4 py-3", pending && "opacity-60")}>
       <button
         type="button"
         role="checkbox"
@@ -36,7 +36,7 @@ export function GroceryItemRow({ item, onToggle, onSetCategory, onRemove }: Prop
         disabled={pending}
         onClick={() => onToggle(item.id, !item.checked)}
         className={cn(
-          "focus-visible:ring-ring/50 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-colors outline-none focus-visible:ring-3",
+          "focus-visible:ring-ring/50 relative flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-colors outline-none after:absolute after:-inset-2.5 after:content-[''] focus-visible:ring-3",
           item.checked
             ? "border-primary bg-primary text-primary-foreground"
             : "border-input hover:border-primary",
@@ -71,7 +71,7 @@ export function GroceryItemRow({ item, onToggle, onSetCategory, onRemove }: Prop
         <DropdownMenuTrigger
           disabled={pending}
           aria-label={`Options for ${item.name}`}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-3"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-3"
         >
           <Ellipsis className="size-5" />
         </DropdownMenuTrigger>

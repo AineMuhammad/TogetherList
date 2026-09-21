@@ -9,11 +9,11 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-/** Desktop navigation, shown in the top bar from `sm` up. */
+/** Desktop navigation, shown in the top bar from `md` up. */
 export function NavLinks() {
   const pathname = usePathname();
   return (
-    <nav className="hidden items-center gap-1 sm:flex" aria-label="Main">
+    <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const active = isActive(pathname, href);
         return (
@@ -43,7 +43,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Main"
-      className="bg-background/90 fixed inset-x-0 bottom-0 z-20 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-lg sm:hidden"
+      className="bg-background/90 fixed inset-x-0 bottom-0 z-20 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden"
     >
       <ul className="mx-auto flex max-w-md">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {

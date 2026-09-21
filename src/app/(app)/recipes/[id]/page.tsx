@@ -11,7 +11,7 @@ export default async function RecipePage({ params }: PageProps<"/recipes/[id]">)
   const recipe = await getRecipeForActiveHousehold(id);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6">
       <Button
         variant="ghost"
         size="sm"
@@ -23,7 +23,7 @@ export default async function RecipePage({ params }: PageProps<"/recipes/[id]">)
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+          <h1 className="text-2xl font-extrabold tracking-tight break-words sm:text-3xl">
             {recipe.name}
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -48,32 +48,42 @@ export default async function RecipePage({ params }: PageProps<"/recipes/[id]">)
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Ingredients</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-2">
-            {recipe.ingredients.map((line, i) => (
-              <li key={i} className="flex gap-3 font-medium">
-                <span className="bg-primary mt-2 size-1.5 shrink-0 rounded-full" />
-                {line}
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-
-      {recipe.instructions && (
+      <div
+        className={
+          recipe.instructions
+            ? "grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-start"
+            : "max-w-lg"
+        }
+      >
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Instructions</CardTitle>
+            <CardTitle className="text-lg">Ingredients</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="leading-relaxed whitespace-pre-wrap">{recipe.instructions}</p>
+            <ul className="space-y-2">
+              {recipe.ingredients.map((line, i) => (
+                <li key={i} className="flex gap-3 font-medium break-words">
+                  <span className="bg-primary mt-2 size-1.5 shrink-0 rounded-full" />
+                  {line}
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
-      )}
+
+        {recipe.instructions && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Instructions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="leading-relaxed break-words whitespace-pre-wrap">
+                {recipe.instructions}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

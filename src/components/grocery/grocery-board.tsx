@@ -49,14 +49,18 @@ export function GroceryBoard({ householdId, initialItems }: Props) {
         </div>
       )}
 
-      <AddItemForm onAdd={(input) => grocery.addItem(input)} />
-      <GroceryList
-        items={grocery.items}
-        onToggle={(id, checked) => report(grocery.toggleItem(id, checked))}
-        onSetCategory={(id, category) => report(grocery.setCategory(id, category))}
-        onRemove={(id) => report(grocery.removeItem(id))}
-        onClearChecked={() => report(grocery.clearChecked())}
-      />
+      <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="lg:sticky lg:top-24">
+          <AddItemForm onAdd={(input) => grocery.addItem(input)} />
+        </div>
+        <GroceryList
+          items={grocery.items}
+          onToggle={(id, checked) => report(grocery.toggleItem(id, checked))}
+          onSetCategory={(id, category) => report(grocery.setCategory(id, category))}
+          onRemove={(id) => report(grocery.removeItem(id))}
+          onClearChecked={() => report(grocery.clearChecked())}
+        />
+      </div>
     </div>
   );
 }
