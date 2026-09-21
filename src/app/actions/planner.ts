@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { parseDateString } from "@/lib/dates";
+import { categorize } from "@/lib/categorize";
+import { addDays, parseDateString, startOfWeek } from "@/lib/dates";
+import { ingredientKey, mergeIngredients } from "@/lib/ingredients";
 import { getMembership, requireUser } from "@/lib/household";
 import { MealSlot } from "@/generated/prisma/enums";
 
@@ -45,4 +47,56 @@ export async function removeMealPlanEntry(entryId: string): Promise<{ error?: st
   }
   revalidatePath("/planner");
   return {};
+}
+
+export type GenerateResult = { error?: string; added?: string[]; skipped?: string[] };
+
+/**
+ * Turns the week's planned meals into grocery items: ingredient lines from every
+ * planned recipe are merged, and anything already on the list (unchecked) is skipped.
+ */
+export async function generateGroceryFromPlan(
+  householdId: string,
+  weekStart: string,
+): Promise<GenerateResult> {
+  const user = await requireUser();
+  if (!(await getMembership(user.id, householdId)))
+    return { error: "Not a member of this household." };
+  if (!parseDateString(weekStart)) return { error: "That week isn't valid." };
+
+  const start = startOfWeek(weekStart);
+  const entries = await db.mealPlanEntry.findMany({
+    where: {
+      householdId,
+      date: { gte: parseDateString(start)!, lte: parseDateString(addDays(start, 6))! },
+    },
+    include: { recipe: { select: { ingredients: true } } },
+  });
+  if (entries.length === 0) return { error: "No meals are planned for this week yet." };
+
+  // Each planned meal counts, so a recipe planned twice doubles its ingredients.
+  const merged = mergeIngredients(entries.flatMap((e) => e.recipe.ingredients));
+
+  const unchecked = await db.groceryItem.findMany({
+    where: { householdId, checked: false },
+    select: { name: true },
+  });
+  const onList = new Set(unchecked.map((i) => ingredientKey(i.name)));
+
+  const toAdd = merged.filter((m) => !onList.has(m.key));
+  const skipped = merged.filter((m) => onList.has(m.key)).map((m) => m.name);
+
+  if (toAdd.length > 0) {
+    await db.groceryItem.createMany({
+      data: toAdd.map((m) => ({
+        householdId,
+        name: m.name.slice(0, 100),
+        quantity: m.quantity,
+        category: categorize(m.name),
+        addedById: user.id,
+      })),
+    });
+  }
+  revalidatePath("/");
+  return { added: toAdd.map((m) => m.name), skipped };
 }

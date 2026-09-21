@@ -12,6 +12,7 @@ import {
   weekDates,
 } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/page-header";
+import { GenerateListCard } from "@/components/planner/generate-list-card";
 import { PlannerBoard } from "@/components/planner/planner-board";
 import { Button } from "@/components/ui/button";
 
@@ -81,6 +82,12 @@ export default async function PlannerPage({ searchParams }: PageProps<"/planner"
             )}
           </div>
         }
+      />
+      <GenerateListCard
+        key={weekStart}
+        householdId={active.householdId}
+        weekStart={weekStart}
+        plannedCount={entries.length}
       />
       <PlannerBoard
         key={weekStart}
