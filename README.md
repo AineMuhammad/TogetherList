@@ -6,6 +6,28 @@ A shared grocery list and weekly meal planner for a household. Everyone in the h
 
 **Live app: https://togetherlist-one.vercel.app**
 
+## Screenshots
+
+![The shared grocery list, grouped by category](docs/screenshots/grocery-desktop.png)
+
+![The weekly meal planner](docs/screenshots/planner-desktop.png)
+
+<p>
+  <img src="docs/screenshots/grocery-mobile.png" alt="Grocery list on a phone" width="260">
+  <img src="docs/screenshots/planner-mobile.png" alt="Meal planner on a phone" width="260">
+</p>
+
+<details>
+<summary>More: recipe library, dark mode and sign-in</summary>
+
+![Recipe library](docs/screenshots/recipes-desktop.png)
+
+![Dark mode](docs/screenshots/grocery-dark.png)
+
+![Sign-in](docs/screenshots/sign-in.png)
+
+</details>
+
 ## Features
 
 - **Accounts:** sign up and sign in with email and password, or with Google. Every page and API route requires a signed-in user.
@@ -128,6 +150,21 @@ npx playwright install chromium
 npm run build
 npm run test:e2e
 ```
+
+### Regenerating screenshots
+
+`scripts/capture-screenshots.mjs` seeds a demo household ("The Morgans") through the real UI and saves the images in `docs/screenshots`. It runs headlessly and refuses to run against anything but a local server, so point it at a throwaway database:
+
+```bash
+docker run -d --name togetherlist-shots -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=togetherlist_shots -p 5432:5432 postgres:16
+export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/togetherlist_shots
+npx prisma migrate deploy && npm run build
+AUTH_SECRET=x AUTH_TRUST_HOST=true AUTH_URL=http://localhost:3100 npm run start -- --port 3100 &
+npm run docs:screenshots
+```
+
+The planner shows the current week, so re-run this whenever you want the dates refreshed.
 
 **CI** (`.github/workflows/ci.yml`) runs on every push and pull request: one job checks formatting, lint, types and unit tests; a second starts a Postgres service, migrates it, builds the app and runs the Playwright test, uploading the report if it fails.
 

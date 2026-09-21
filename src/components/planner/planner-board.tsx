@@ -133,6 +133,7 @@ export function PlannerBoard({ days, entries, recipes }: Props) {
               {days.map((date) => (
                 <div
                   key={date}
+                  data-slot-cell={`${days.indexOf(date)}-${MEAL_SLOT_ORDER.indexOf(slot)}`}
                   className={cn(
                     "bg-card ring-foreground/8 min-h-28 rounded-xl p-2 ring-1",
                     date === today && "ring-primary/40 ring-2",
