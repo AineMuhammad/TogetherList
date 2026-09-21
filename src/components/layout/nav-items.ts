@@ -1,9 +1,10 @@
-import { Settings, ShoppingBasket, type LucideIcon } from "lucide-react";
+import { ChefHat, Settings, ShoppingBasket, type LucideIcon } from "lucide-react";
 
 export type NavItem = { href: string; label: string; icon: LucideIcon };
 
-// Later steps add Recipes and Planner here.
+// A later step adds the meal Planner here.
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Grocery", icon: ShoppingBasket },
+  { href: "/recipes", label: "Recipes", icon: ChefHat },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
